@@ -6,10 +6,6 @@ terraform {
   }
 }
 
-terraform {
-  experiments = [module_variable_optional_attrs]
-}
-
 data "oci_core_services" "services" {
   filter {
     name   = "name"
