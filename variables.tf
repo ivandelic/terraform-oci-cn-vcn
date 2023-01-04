@@ -1,16 +1,20 @@
 variable "compartment_ocid" {
+  description = "OCID of a compartment where VCN is going to be placed."
   type = string
 }
 
 variable "name" {
+  description = "Name of the Virtual Cloud Network. The name will be reused to create Internet Gateway, NAT Gateway, Service Gateway, and Local Peering Gateway."
   type = string
 }
 
 variable "vcn_cidr" {
+  description = "IPv4 CIDR block for the VCN. The allowable VCN size range is /16 to /30. Example: 10.0.0.0/16"
   type = string
 }
 
 variable "vcn_subnets" {
+  description = "A complex object for declaring subnets, associated route tables, and security lists. Please check examples."
   default = null
   type    = map(object({
     cidr_block = string
