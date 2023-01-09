@@ -19,13 +19,13 @@ variable "vcn_subnets" {
   type    = map(object({
     cidr_block = string
     is_public  = bool
-    rt_rules   = list(object({
+    rt_rules   = optional(list(object({
       description         = string
       destination         = string
       destination_type    = string
       network_entity_type = string
       network_entity_id   = optional(string)
-    }))
+    })))
     sl_rules = object({
       egress_security_rules = optional(list(object({
         destination      = string
