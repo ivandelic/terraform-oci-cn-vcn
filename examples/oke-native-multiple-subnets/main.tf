@@ -15,7 +15,7 @@ provider "oci" {
 }
 
 module "vcn" {
-  source           = "../../"
+  source           = "ivandelic/cn-vcn/oci"
   compartment_ocid = var.compartment_ocid
   name             = var.vcn_name
   vcn_cidr         = var.vcn_cidr
