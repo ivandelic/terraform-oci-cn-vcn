@@ -68,3 +68,12 @@ variable "vcn_subnets" {
     })
   }))
 }
+
+variable "vcn_lpgs" {
+  description = "A complex object for declaring Local Peering Gateways. Please check examples."
+  default = null
+  type    = map(object({
+    peer_id = optional(string)
+    route_table_id = optional(string)
+  }))
+}

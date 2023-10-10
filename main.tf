@@ -42,10 +42,13 @@ resource "oci_core_service_gateway" "service_gateway" {
   vcn_id = oci_core_vcn.vcn.id
 }
 
-resource "oci_core_local_peering_gateway" "local_peering_gateway" {
+resource "oci_core_local_peering_gateway" "local_peering_gateways" {
+  for_each       = var.vcn_lpgs != null ? var.vcn_lpgs : {}
   compartment_id = var.compartment_ocid
   vcn_id         = oci_core_vcn.vcn.id
-  display_name   = format("%s%s", "lpg-", var.name)
+  display_name   = format("%s%s", "lpg-", each.key)
+  peer_id        = each.value.peer_id
+  route_table_id = each.value.route_table_id
 }
 
 resource "oci_core_subnet" "subnet" {
@@ -121,7 +124,7 @@ resource "oci_core_route_table" "route_table" {
       description       = route_rules.value["description"]
       destination       = route_rules.value["destination"]
       destination_type  = route_rules.value["destination_type"]
-      network_entity_id = oci_core_local_peering_gateway.local_peering_gateway.id
+      network_entity_id = oci_core_local_peering_gateway.local_peering_gateways[route_rules.value["network_entity_id"]].id
     }
   }
   vcn_id = oci_core_vcn.vcn.id
@@ -129,7 +132,7 @@ resource "oci_core_route_table" "route_table" {
 
 resource "oci_core_security_list" "security_list" {
   lifecycle {
-    ignore_changes = [egress_security_rules, ingress_security_rules]
+    #ignore_changes = [egress_security_rules, ingress_security_rules]
   }
   for_each       = var.vcn_subnets != null ? var.vcn_subnets : {}
   compartment_id = var.compartment_ocid
