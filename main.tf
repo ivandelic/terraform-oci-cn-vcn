@@ -17,25 +17,28 @@ data "oci_core_services" "services" {
 resource "oci_core_vcn" "vcn" {
   cidr_block     = var.vcn_cidr
   compartment_id = var.compartment_ocid
-  display_name   = format("%s%s", "vcn-", var.name)
+  display_name   = var.prefix_resources ? format("%s%s", "vcn-", var.name) : var.name
   dns_label      = replace(var.name, "-", "")
 }
 
 resource "oci_core_internet_gateway" "internet_gateway" {
+  count          = var.create_internet_gateway ? 1 : 0
   compartment_id = var.compartment_ocid
-  display_name   = format("%s%s", "ig-", var.name)
+  display_name   = var.prefix_resources ? format("%s%s", "ig-", var.name) : var.name
   vcn_id         = oci_core_vcn.vcn.id
 }
 
 resource "oci_core_nat_gateway" "nat_gateway" {
+  count          = var.create_nat_gateway ? 1 : 0
   compartment_id = var.compartment_ocid
   vcn_id         = oci_core_vcn.vcn.id
-  display_name   = format("%s%s", "ng-", var.name)
+  display_name   = var.prefix_resources ? format("%s%s", "ng-", var.name) : var.name
 }
 
 resource "oci_core_service_gateway" "service_gateway" {
+  count          = var.create_service_gateway ? 1 : 0
   compartment_id = var.compartment_ocid
-  display_name   = format("%s%s", "sg-", var.name)
+  display_name   = var.prefix_resources ? format("%s%s", "sg-", var.name) : var.name
   services {
     service_id = data.oci_core_services.services.services.0.id
   }
@@ -46,16 +49,28 @@ resource "oci_core_local_peering_gateway" "local_peering_gateways" {
   for_each       = var.vcn_lpgs != null ? var.vcn_lpgs : {}
   compartment_id = var.compartment_ocid
   vcn_id         = oci_core_vcn.vcn.id
-  display_name   = format("%s%s", "lpg-", each.key)
+  display_name   = var.prefix_resources ? format("%s%s", "lpg-", each.key) : each.key
   peer_id        = each.value.peer_id
   route_table_id = each.value.route_table_id
+}
+
+resource "oci_core_drg_attachment" "drg_attachment" {
+  for_each           = var.vcn_drg_attachments != null ? var.vcn_drg_attachments : {}
+  display_name       = var.prefix_resources ? format("%s%s", "drg-attch-", each.key) : each.key
+  drg_id             = each.value.drg_id
+  drg_route_table_id = each.value.drg_route_table_id
+  network_details {
+    id             = oci_core_vcn.vcn.id
+    type           = "VCN"
+    vcn_route_type = "SUBNET_CIDRS"
+  }
 }
 
 resource "oci_core_subnet" "subnet" {
   for_each                   = var.vcn_subnets != null ? var.vcn_subnets : {}
   cidr_block                 = each.value.cidr_block
   compartment_id             = var.compartment_ocid
-  display_name               = format("%s-%s", "sn", each.key)
+  display_name               = var.prefix_resources ? format("%s-%s", "sn", each.key) : each.key
   dns_label                  = replace(each.key, "-", "")
   prohibit_public_ip_on_vnic = !each.value.is_public
   route_table_id             = oci_core_route_table.route_table[each.key].id
@@ -66,23 +81,23 @@ resource "oci_core_subnet" "subnet" {
 resource "oci_core_route_table" "route_table" {
   for_each       = var.vcn_subnets != null ? var.vcn_subnets : {}
   compartment_id = var.compartment_ocid
-  display_name   = format("%s%s", "rt-", each.key)
+  display_name   = var.prefix_resources ? format("%s%s", "rt-", each.key) : each.key
   dynamic "route_rules" {
     for_each = each.value.rt_rules != null ? {
-      for k, v in each.value.rt_rules : k => v
-      if v.network_entity_type == "ig"
+    for k, v in each.value.rt_rules : k => v
+    if v.network_entity_type == "ig" && var.create_internet_gateway
     } : {}
     content {
       description       = route_rules.value["description"]
       destination       = route_rules.value["destination"]
       destination_type  = route_rules.value["destination_type"]
-      network_entity_id = oci_core_internet_gateway.internet_gateway.id
+      network_entity_id = oci_core_internet_gateway.internet_gateway[0].id
     }
   }
   dynamic "route_rules" {
     for_each = each.value.rt_rules != null ? {
-      for k, v in each.value.rt_rules : k => v
-      if v.network_entity_type == "drg"
+    for k, v in each.value.rt_rules : k => v
+    if v.network_entity_type == "drg"
     } : {}
     content {
       description       = route_rules.value["description"]
@@ -93,32 +108,32 @@ resource "oci_core_route_table" "route_table" {
   }
   dynamic "route_rules" {
     for_each = each.value.rt_rules != null ? {
-      for k, v in each.value.rt_rules : k => v
-      if v.network_entity_type == "ng"
+    for k, v in each.value.rt_rules : k => v
+    if v.network_entity_type == "ng" && var.create_nat_gateway
     } : {}
     content {
       description       = route_rules.value["description"]
       destination       = route_rules.value["destination"]
       destination_type  = route_rules.value["destination_type"]
-      network_entity_id = oci_core_nat_gateway.nat_gateway.id
+      network_entity_id = oci_core_nat_gateway.nat_gateway[0].id
     }
   }
   dynamic "route_rules" {
     for_each = each.value.rt_rules != null ? {
-      for k, v in each.value.rt_rules : k => v
-      if v.network_entity_type == "sg"
+    for k, v in each.value.rt_rules : k => v
+    if v.network_entity_type == "sg" && var.create_service_gateway
     } : {}
     content {
       description       = route_rules.value["description"]
       destination       = route_rules.value["destination"]
       destination_type  = route_rules.value["destination_type"]
-      network_entity_id = oci_core_service_gateway.service_gateway.id
+      network_entity_id = oci_core_service_gateway.service_gateway[0].id
     }
   }
   dynamic "route_rules" {
     for_each = each.value.rt_rules != null ? {
-      for k, v in each.value.rt_rules : k => v
-      if v.network_entity_type == "lpg"
+    for k, v in each.value.rt_rules : k => v
+    if v.network_entity_type == "lpg"
     } : {}
     content {
       description       = route_rules.value["description"]
@@ -131,13 +146,10 @@ resource "oci_core_route_table" "route_table" {
 }
 
 resource "oci_core_security_list" "security_list" {
-  lifecycle {
-    #ignore_changes = [egress_security_rules, ingress_security_rules]
-  }
   for_each       = var.vcn_subnets != null ? var.vcn_subnets : {}
   compartment_id = var.compartment_ocid
   vcn_id         = oci_core_vcn.vcn.id
-  display_name   = format("%s%s", "sl-", each.key)
+  display_name   = var.prefix_resources ? format("%s%s", "sl-", each.key) : each.key
   dynamic "egress_security_rules" {
     for_each = each.value.sl_rules != null ? ( each.value.sl_rules.egress_security_rules != null ? each.value.sl_rules.egress_security_rules : [] ) : []
     content {

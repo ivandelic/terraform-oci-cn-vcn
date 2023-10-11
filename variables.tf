@@ -77,3 +77,36 @@ variable "vcn_lpgs" {
     route_table_id = optional(string)
   }))
 }
+
+variable "vcn_drg_attachments" {
+  description = "A complex object for declaring Dynamic Peering Gateways to attach within VNC."
+  default = null
+  type    = map(object({
+    drg_id = optional(string)
+    drg_route_table_id = optional(string)
+  }))
+}
+
+variable "prefix_resources" {
+  description = "Let the terraform prefix all the resources with the acronym. VNC would be prefixed with vcn_, Security List with sl_, and similar for other resources."
+  type = bool
+  default = true
+}
+
+variable "create_internet_gateway" {
+  description = "Switch for Internet Gateway creation in VCN. Default is true. Put false if you don't want it to be created."
+  type = bool
+  default = true
+}
+
+variable "create_nat_gateway" {
+  description = "Switch for NAT Gateway creation in VCN. Default is true. Put false if you don't want it to be created."
+  type = bool
+  default = true
+}
+
+variable "create_service_gateway" {
+  description = "Switch for Service Gateway creation in VCN. Default is true. Put false if you don't want it to be created."
+  type = bool
+  default = true
+}
