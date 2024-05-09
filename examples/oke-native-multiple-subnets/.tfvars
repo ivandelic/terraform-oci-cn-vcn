@@ -28,7 +28,7 @@ vcn_subnets = {
         {
           # Optional, delete after pilot.
           description = "Allow SSH traffic to pods nodes."
-          destination = "10.81.25.0/25"
+          destination = "10.81.30.0/24"
           protocol    = "6"
           tcp_options = {
             min = 22
@@ -83,12 +83,6 @@ vcn_subnets = {
     is_public  = false
     rt_rules   = [
       {
-        description         = "Traffic to Internet"
-        destination         = "0.0.0.0/0"
-        destination_type    = "CIDR_BLOCK"
-        network_entity_type = "ng"
-      },
-      {
         description         = "Traffic to OCI services"
         destination         = "all-fra-services-in-oracle-services-network"
         destination_type    = "SERVICE_CIDR_BLOCK"
@@ -127,7 +121,7 @@ vcn_subnets = {
         {
           description = "Pod 1 to Kubernetes API endpoint communication"
           protocol    = "6"
-          source      = "10.81.25.0/25"
+          source      = "10.81.30.0/24"
           tcp_options = {
             min = 6443
             max = 6443
@@ -136,7 +130,7 @@ vcn_subnets = {
         {
           description = "Pod 1 to Kubernetes API endpoint communication"
           protocol    = "6"
-          source      = "10.81.25.0/25"
+          source      = "10.81.30.0/24"
           tcp_options = {
             min = 12250
             max = 12250
@@ -222,6 +216,15 @@ vcn_subnets = {
             min = 6443
             max = 6443
           }
+        },
+        {
+          description = "Bastion Service access to Kubernetes API endpoint"
+          protocol    = "6"
+          source      = "10.81.16.0/29"
+          tcp_options = {
+            min = 6443
+            max = 6443
+          }
         }
       ]
       egress_security_rules = [
@@ -230,9 +233,15 @@ vcn_subnets = {
           destination      = "all-fra-services-in-oracle-services-network"
           destination_type = "SERVICE_CIDR_BLOCK"
           protocol         = "6"
-          tcp_options      = {
-            min = 443
-            max = 443
+        },
+        {
+          description      = "Allow Kubernetes Control Plane Path Discovery"
+          destination      = "all-fra-services-in-oracle-services-network"
+          destination_type = "SERVICE_CIDR_BLOCK"
+          protocol = "1"
+          icmp_options     = {
+            code = "4"
+            type = "3"
           }
         },
         {
@@ -257,7 +266,7 @@ vcn_subnets = {
         },
         {
           description      = "Allow Kubernetes API endpoint to communicate with pods 1."
-          destination      = "10.81.25.0/25"
+          destination      = "10.81.30.0/24"
           destination_type = "CIDR_BLOCK"
           protocol         = "all"
         },
@@ -284,6 +293,16 @@ vcn_subnets = {
           destination      = "10.81.27.0/25"
           destination_type = "CIDR_BLOCK"
           protocol         = "all"
+        },
+        {
+          description      = "Bastion Service access to Kubernetes API endpoint"
+          protocol         = "6"
+          destination_type = "CIDR_BLOCK"
+          destination      = "10.81.16.0/29"
+          tcp_options      = {
+            min = 6443
+            max = 6443
+          }
         }
       ]
     }
@@ -292,12 +311,6 @@ vcn_subnets = {
     cidr_block = "10.81.17.0/24"
     is_public  = false
     rt_rules   = [
-      {
-        description         = "Traffic to Internet"
-        destination         = "0.0.0.0/0"
-        destination_type    = "CIDR_BLOCK"
-        network_entity_type = "ng"
-      },
       {
         description         = "traffic to OCI services"
         destination         = "all-fra-services-in-oracle-services-network"
@@ -329,6 +342,15 @@ vcn_subnets = {
           description = "Allow inbound SSH traffic to worker nodes."
           protocol    = "6"
           source      = "10.81.16.8/29"
+          tcp_options = {
+            min = 22
+            max = 22
+          }
+        },
+        {
+          description = "Allow Bastion Service inbound SSH traffic to worker nodes."
+          protocol    = "6"
+          source      = "10.81.17.0/24"
           tcp_options = {
             min = 22
             max = 22
@@ -374,7 +396,7 @@ vcn_subnets = {
       egress_security_rules = [
         {
           description      = "Allow worker nodes to access pods 1."
-          destination      = "10.81.25.0/25"
+          destination      = "10.81.30.0/24"
           destination_type = "CIDR_BLOCK"
           protocol         = "all"
         },
@@ -439,24 +461,23 @@ vcn_subnets = {
           }
         },
         {
-          description      = "Worker Nodes access to Internet"
-          destination      = "0.0.0.0/0" # WARNING: Optional, for reaching internet from workers by NAT
+          description      = "Allow Bastion Service inbound SSH traffic to worker nodes."
+          destination      = "10.81.17.0/24"
           destination_type = "CIDR_BLOCK"
           protocol         = "6"
+          tcp_options = {
+            min = 22
+            max = 22
+          }
+
         }
       ]
     }
   }
   test-pods-1 = {
-    cidr_block = "10.81.25.0/25"
+    cidr_block = "10.81.30.0/24"
     is_public  = false
     rt_rules   = [
-      {
-        description         = "Traffic to Internet"
-        destination         = "0.0.0.0/0"
-        destination_type    = "CIDR_BLOCK"
-        network_entity_type = "ng"
-      },
       {
         description         = "traffic to OCI services"
         destination         = "all-fra-services-in-oracle-services-network"
@@ -479,7 +500,7 @@ vcn_subnets = {
         {
           description = "Allow pods to communicate with other pods"
           protocol    = "all"
-          source      = "10.81.25.0/25"
+          source      = "10.81.30.0/24"
         },
         {
           description = "Allow bastion to SSH to pods"
@@ -494,7 +515,7 @@ vcn_subnets = {
       egress_security_rules = [
         {
           description      = "Allow pods to communicate with other pods"
-          destination      = "10.81.25.0/25"
+          destination      = "10.81.30.0/24"
           destination_type = "CIDR_BLOCK"
           protocol         = "all"
         },
@@ -541,12 +562,6 @@ vcn_subnets = {
     cidr_block = "10.81.25.128/25"
     is_public  = false
     rt_rules   = [
-      {
-        description         = "Traffic to Internet"
-        destination         = "0.0.0.0/0"
-        destination_type    = "CIDR_BLOCK"
-        network_entity_type = "ng"
-      },
       {
         description         = "traffic to OCI services"
         destination         = "all-fra-services-in-oracle-services-network"
@@ -632,12 +647,6 @@ vcn_subnets = {
     is_public  = false
     rt_rules   = [
       {
-        description         = "Traffic to Internet"
-        destination         = "0.0.0.0/0"
-        destination_type    = "CIDR_BLOCK"
-        network_entity_type = "ng"
-      },
-      {
         description         = "traffic to OCI services"
         destination         = "all-fra-services-in-oracle-services-network"
         destination_type    = "SERVICE_CIDR_BLOCK"
@@ -721,12 +730,6 @@ vcn_subnets = {
     cidr_block = "10.81.26.128/25"
     is_public  = false
     rt_rules   = [
-      {
-        description         = "Traffic to Internet"
-        destination         = "0.0.0.0/0"
-        destination_type    = "CIDR_BLOCK"
-        network_entity_type = "ng"
-      },
       {
         description         = "traffic to OCI services"
         destination         = "all-fra-services-in-oracle-services-network"
@@ -812,12 +815,6 @@ vcn_subnets = {
     is_public  = false
     rt_rules   = [
       {
-        description         = "Traffic to Internet"
-        destination         = "0.0.0.0/0"
-        destination_type    = "CIDR_BLOCK"
-        network_entity_type = "ng"
-      },
-      {
         description         = "traffic to OCI services"
         destination         = "all-fra-services-in-oracle-services-network"
         destination_type    = "SERVICE_CIDR_BLOCK"
@@ -897,17 +894,9 @@ vcn_subnets = {
       ]
     }
   }
-  test-lb-1 = {
+  test-lb-int = {
     cidr_block = "10.81.16.32/27"
-    is_public  = true
-    rt_rules   = [
-      {
-        description         = "Traffic from Internet"
-        destination         = "0.0.0.0/0"
-        destination_type    = "CIDR_BLOCK"
-        network_entity_type = "ig"
-      }
-    ]
+    is_public  = false
     sl_rules = {
       ingress_security_rules = [
         {
@@ -943,7 +932,7 @@ vcn_subnets = {
       ]
     }
   }
-  test-lb-2 = {
+  test-lb-ext = {
     cidr_block = "10.81.16.64/27"
     is_public  = false
     sl_rules = {
@@ -980,5 +969,11 @@ vcn_subnets = {
         }
       ]
     }
+  }
+}
+
+vcn_drg_attachments = {
+  moneta-onprem = {
+    drg_id = "ocid1.drg.oc1.eu-frankfurt-1.aaaaaaaamu6snzq5byfuf5e5nhn4j3sgczod7b6edeuzzy3z42ygxsu7rqha"
   }
 }

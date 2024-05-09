@@ -86,3 +86,11 @@ variable "vcn_lpgs" {
     route_table_id = optional(string)
   }))
 }
+
+variable "vcn_drg_attachments" {
+  default = null
+  type    = map(object({
+    drg_id = optional(string)
+    drg_route_table_id = optional(string)
+  }))
+}
