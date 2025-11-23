@@ -54,7 +54,7 @@ resource "oci_core_local_peering_gateway" "local_peering_gateways" {
   route_table_id = each.value.route_table_id
 }
 
-resource "oci_core_drg_attachment" "drg_attachment" {
+resource "oci_core_drg_attachment" "drg_attachments" {
   for_each           = var.vcn_drg_attachments != null ? var.vcn_drg_attachments : {}
   display_name       = var.prefix_resources ? format("%s%s", "drg-attch-", each.key) : each.key
   drg_id             = each.value.drg_id
