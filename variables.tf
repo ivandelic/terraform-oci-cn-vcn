@@ -34,8 +34,12 @@ variable "vcn_subnets" {
         destination_type = optional(string)
         stateless        = optional(bool)
         tcp_options      = optional(object({
-          min = number
-          max = number
+          min = optional(number)
+          max = optional(number)
+          source_port_range = optional(object({
+            min = number
+            max = number
+          }))
         }))
         udp_options = optional(object({
           min = number
@@ -52,9 +56,13 @@ variable "vcn_subnets" {
         description = optional(string)
         source_type = optional(string)
         stateless   = optional(bool)
-        tcp_options = optional(object({
-          min = number
-          max = number
+        tcp_options      = optional(object({
+          min = optional(number)
+          max = optional(number)
+          source_port_range = optional(object({
+            min = number
+            max = number
+          }))
         }))
         udp_options = optional(object({
           min = number
