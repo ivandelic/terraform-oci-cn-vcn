@@ -11,13 +11,21 @@ variable "name" {
 variable "vcn_cidr" {
   description = "IPv4 CIDR block for the VCN. The allowable VCN size range is /16 to /30. Example: 10.0.0.0/16"
   type = string
+  default = null
+}
+
+variable "vcn_cidrs" {
+  description = "IPv4 CIDR blocks for the VCN. The allowable VCN size range is /16 to /30. Example: 10.0.0.0/16"
+  type = list(string)
+  default = null
 }
 
 variable "vcn_subnets" {
   description = "A complex object for declaring subnets, associated route tables, and security lists. Please check examples."
   default = null
   type    = map(object({
-    cidr_block = string
+    cidr_block = optional(string)
+    cidr_blocks = optional(list(string))
     is_public  = bool
     rt_rules   = optional(list(object({
       description         = string
@@ -75,6 +83,13 @@ variable "vcn_subnets" {
       })))
     })
   }))
+  validation {
+    condition = var.vcn_subnets == null ? true : alltrue([
+      for subnet in values(var.vcn_subnets) :
+      (subnet.cidr_block != null) != (subnet.cidr_blocks != null)
+    ])
+    error_message = "Each subnet must set exactly one of cidr_block or cidr_blocks."
+  }
 }
 
 variable "vcn_lpgs" {

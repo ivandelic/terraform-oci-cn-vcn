@@ -6,6 +6,13 @@ terraform {
   }
 }
 
+check "vcn_cidr_input" {
+  assert {
+    condition     = (var.vcn_cidr != null) != (var.vcn_cidrs != null)
+    error_message = "Set exactly one of vcn_cidr or vcn_cidrs."
+  }
+}
+
 data "oci_core_services" "services" {
   filter {
     name   = "name"
@@ -15,7 +22,7 @@ data "oci_core_services" "services" {
 }
 
 resource "oci_core_vcn" "vcn" {
-  cidr_block     = var.vcn_cidr
+  cidr_blocks    = var.vcn_cidr != null ? [ var.vcn_cidr ] : var.vcn_cidrs
   compartment_id = var.compartment_ocid
   display_name   = var.prefix_resources ? format("%s%s", "vcn-", var.name) : var.name
   dns_label      = replace(var.name, "-", "")
@@ -69,6 +76,7 @@ resource "oci_core_drg_attachment" "drg_attachments" {
 resource "oci_core_subnet" "subnet" {
   for_each                   = var.vcn_subnets != null ? var.vcn_subnets : {}
   cidr_block                 = each.value.cidr_block
+  ipv4cidr_blocks            = each.value.cidr_block != null ? [ each.value.cidr_block ] : each.value.cidr_blocks
   compartment_id             = var.compartment_ocid
   display_name               = var.prefix_resources ? format("%s-%s", "sn", each.key) : each.key
   dns_label                  = replace(each.key, "-", "")
