@@ -75,7 +75,6 @@ resource "oci_core_drg_attachment" "drg_attachments" {
 
 resource "oci_core_subnet" "subnet" {
   for_each                   = var.vcn_subnets != null ? var.vcn_subnets : {}
-  cidr_block                 = each.value.cidr_block
   ipv4cidr_blocks            = each.value.cidr_block != null ? [ each.value.cidr_block ] : each.value.cidr_blocks
   compartment_id             = var.compartment_ocid
   display_name               = var.prefix_resources ? format("%s-%s", "sn", each.key) : each.key
